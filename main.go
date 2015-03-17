@@ -9,6 +9,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/brandfolder/gin-gorelic"
 	"github.com/gin-gonic/contrib/cache"
 	"github.com/gin-gonic/gin"
 	"github.com/julienschmidt/httprouter"
@@ -65,6 +66,8 @@ func staticDataAction(c *gin.Context) {
 
 func main() {
 	r := gin.Default()
+	gorelic.InitNewrelicAgent(os.Getenv("NEWRELIC_KEY"), "rgts static-proxy", true)
+	r.Use(gorelic.Handler)
 	store := cache.NewInMemoryStore(time.Second)
 	v1 := r.Group("/v1")
 	{
