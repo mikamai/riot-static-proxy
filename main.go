@@ -13,6 +13,7 @@ import (
 	"github.com/gin-gonic/contrib/cache"
 	"github.com/gin-gonic/gin"
 	"github.com/julienschmidt/httprouter"
+	"github.com/stvp/rollbar"
 )
 
 func composeStaticDataAPI(params httprouter.Params, values url.Values) *url.URL {
@@ -23,7 +24,7 @@ func composeStaticDataAPI(params httprouter.Params, values url.Values) *url.URL 
 		),
 	)
 	if err != nil {
-		log.Fatal(err)
+		rollbar.Error(rollbar.ERR, err)
 	}
 	return baseURL
 }
@@ -39,12 +40,12 @@ func callStaticDataAPI(u *url.URL) string {
 	log.Print("Calling " + u.String())
 	res, err := http.Get(u.String())
 	if err != nil {
-		log.Fatal(err)
+		rollbar.Error(rollbar.ERR, err)
 	}
 	data, err := ioutil.ReadAll(res.Body)
 	res.Body.Close()
 	if err != nil {
-		log.Fatal(err)
+		rollbar.Error(rollbar.ERR, err)
 	}
 	return fmt.Sprintf("%s", data)
 }
@@ -65,6 +66,11 @@ func staticDataAction(c *gin.Context) {
 // }
 
 func main() {
+	rollbar.Token = os.Getenv("ROLLBAR_KEY")
+	if os.Getenv("GO_ENV") != "" {
+		rollbar.Environment = os.Getenv("GO_ENV")
+	}
+
 	r := gin.Default()
 	gorelic.InitNewrelicAgent(os.Getenv("NEWRELIC_KEY"), "rgts static-proxy", true)
 	r.Use(gorelic.Handler)
