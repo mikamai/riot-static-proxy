@@ -7,7 +7,9 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"time"
 
+	"github.com/gin-gonic/contrib/cache"
 	"github.com/gin-gonic/gin"
 	"github.com/julienschmidt/httprouter"
 )
@@ -52,13 +54,22 @@ func staticDataAction(c *gin.Context) {
 	c.String(http.StatusOK, callStaticDataAPI(u))
 }
 
+//
+// func prepareCacheStore() cache.CacheStore {
+// 	host := os.Getenv("REDIS_URL")
+// 	if host == "" {
+// 		host = "localhost:6379"
+// 	}
+// 	return cache.NewRedisCache("192.121.111.111", "", time.Minute*15)
+// }
+
 func main() {
 	r := gin.Default()
-
+	store := cache.NewInMemoryStore(time.Second)
 	v1 := r.Group("/v1")
 	{
-		v1.GET("/:region/:thing", staticDataAction)
-		v1.GET("/:region/:thing/:id", staticDataAction)
+		v1.GET("/:region/:thing", cache.CachePage(store, time.Minute*15, staticDataAction))
+		v1.GET("/:region/:thing/:id", cache.CachePage(store, time.Minute*15, staticDataAction))
 	}
 
 	r.Run(":8080")
