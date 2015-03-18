@@ -14,21 +14,17 @@ import (
 
 func staticDataAction(c *gin.Context) {
 	c.Request.ParseForm()
-	requestParams := riotAPI.StaticRequestParams{
+	request := riotAPI.StaticRequest{
 		Region: c.Params.ByName("region"),
 		Thing:  c.Params.ByName("thing"),
 		ID:     c.Params.ByName("id"),
 		Params: c.Request.Form,
 	}
-	u, err := riotAPI.BuildStaticRequestURL(requestParams)
+	data, err := request.Execute()
 	if err != nil {
 		rollbar.Error(rollbar.ERR, err)
 	}
-	res, err := riotAPI.Call(u)
-	if err != nil {
-		rollbar.Error(rollbar.ERR, err)
-	}
-	c.String(http.StatusOK, res.(string))
+	c.String(http.StatusOK, data.(string))
 }
 
 //

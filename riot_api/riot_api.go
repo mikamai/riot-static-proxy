@@ -3,7 +3,6 @@ package riotAPI
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -12,45 +11,23 @@ import (
 // APIKey ...
 var APIKey string
 
-// StaticRequestParams ...
-type StaticRequestParams struct {
-	Region string
-	Thing  string
-	ID     string
-	Params url.Values
-}
-
-func composeStaticRequestURL(params []interface{}) (*url.URL, error) {
-	return url.Parse(
-		fmt.Sprintf(
-			"https://global.api.pvp.net/api/lol/static-data/%s/v1.2/%s/%s",
-			params...,
-		),
-	)
-}
-
 func addAPIKeyToURL(u *url.URL) {
 	q := u.Query()
 	q.Set("api_key", os.Getenv("RIOT_API_KEY"))
 	u.RawQuery = q.Encode()
 }
 
-// BuildStaticRequestURL returns an url matching the request
-func BuildStaticRequestURL(params StaticRequestParams) (*url.URL, error) {
-	u, err := composeStaticRequestURL(
-		[]interface{}{params.Region, params.Thing, params.ID},
-	)
+func composeURL(path string, params url.Values) (*url.URL, error) {
+	u, err := url.Parse(path)
 	if err != nil {
-		return u, err
+		return nil, err
 	}
-	u.RawQuery = params.Params.Encode()
+	u.RawQuery = params.Encode()
 	addAPIKeyToURL(u)
 	return u, nil
 }
 
-// Call ...
-func Call(u *url.URL) (interface{}, error) {
-	log.Print("Calling " + u.String())
+func callAPI(u *url.URL) (interface{}, error) {
 	res, err := http.Get(u.String())
 	if err != nil {
 		return nil, err
