@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"os"
 )
 
 // APIKey ...
@@ -13,12 +12,12 @@ var APIKey string
 
 func addAPIKeyToURL(u *url.URL) {
 	q := u.Query()
-	q.Set("api_key", os.Getenv("RIOT_API_KEY"))
+	q.Set("api_key", APIKey)
 	u.RawQuery = q.Encode()
 }
 
 func composeURL(path string, params url.Values) (*url.URL, error) {
-	u, err := url.Parse(path)
+	u, err := url.ParseRequestURI(path)
 	if err != nil {
 		return nil, err
 	}
