@@ -1,59 +1,34 @@
 package main
 
 import (
-	"fmt"
-	"io/ioutil"
-	"log"
 	"net/http"
-	"net/url"
 	"os"
+	"riot-static-proxy/riot_api"
 	"time"
 
 	"github.com/brandfolder/gin-gorelic"
 	"github.com/gin-gonic/contrib/cache"
 	"github.com/gin-gonic/gin"
-	"github.com/julienschmidt/httprouter"
 	"github.com/stvp/rollbar"
 )
 
-func composeStaticDataAPI(params httprouter.Params, values url.Values) *url.URL {
-	baseURL, err := url.Parse(
-		fmt.Sprintf(
-			"https://global.api.pvp.net/api/lol/static-data/%s/v1.2/%s/%s",
-			params.ByName("region"), params.ByName("thing"), params.ByName("id"),
-		),
-	)
-	if err != nil {
-		rollbar.Error(rollbar.ERR, err)
-	}
-	return baseURL
-}
-
-func addAPIKeyToURL(u *url.URL) {
-	q := u.Query()
-	q.Set("api_key", os.Getenv("RIOT_API_KEY"))
-	u.RawQuery = q.Encode()
-}
-
-func callStaticDataAPI(u *url.URL) string {
-	addAPIKeyToURL(u)
-	log.Print("Calling " + u.String())
-	res, err := http.Get(u.String())
-	if err != nil {
-		rollbar.Error(rollbar.ERR, err)
-	}
-	data, err := ioutil.ReadAll(res.Body)
-	res.Body.Close()
-	if err != nil {
-		rollbar.Error(rollbar.ERR, err)
-	}
-	return fmt.Sprintf("%s", data)
-}
-
 func staticDataAction(c *gin.Context) {
 	c.Request.ParseForm()
-	u := composeStaticDataAPI(c.Params, c.Request.Form)
-	c.String(http.StatusOK, callStaticDataAPI(u))
+	requestParams := riotAPI.StaticRequestParams{
+		Region: c.Params.ByName("region"),
+		Thing:  c.Params.ByName("thing"),
+		ID:     c.Params.ByName("id"),
+		Params: c.Request.Form,
+	}
+	u, err := riotAPI.BuildStaticRequestURL(requestParams)
+	if err != nil {
+		rollbar.Error(rollbar.ERR, err)
+	}
+	res, err := riotAPI.Call(u)
+	if err != nil {
+		rollbar.Error(rollbar.ERR, err)
+	}
+	c.String(http.StatusOK, res.(string))
 }
 
 //
@@ -67,6 +42,7 @@ func staticDataAction(c *gin.Context) {
 
 func main() {
 	rollbar.Token = os.Getenv("ROLLBAR_KEY")
+	riotAPI.APIKey = os.Getenv("RIOT_API_KEY")
 	if os.Getenv("GO_ENV") != "" {
 		rollbar.Environment = os.Getenv("GO_ENV")
 	}
@@ -75,11 +51,9 @@ func main() {
 	gorelic.InitNewrelicAgent(os.Getenv("NEWRELIC_KEY"), "rgts static-proxy", true)
 	r.Use(gorelic.Handler)
 	store := cache.NewInMemoryStore(time.Second)
-	v1 := r.Group("/v1")
-	{
-		v1.GET("/:region/:thing", cache.CachePage(store, time.Minute*15, staticDataAction))
-		v1.GET("/:region/:thing/:id", cache.CachePage(store, time.Minute*15, staticDataAction))
-	}
+
+	r.GET("/:region/:thing", cache.CachePage(store, time.Minute*15, staticDataAction))
+	r.GET("/:region/:thing/:id", cache.CachePage(store, time.Minute*15, staticDataAction))
 
 	r.Run(":8080")
 }
