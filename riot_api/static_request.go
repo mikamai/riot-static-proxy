@@ -18,7 +18,7 @@ var staticRequestURLFormat = "https://global.api.pvp.net/api/lol/static-data/%s/
 func (r StaticRequest) baseURL() string {
 	return fmt.Sprintf(
 		staticRequestURLFormat,
-		[]interface{}{r.Region, r.Thing, r.ID},
+		r.Region, r.Thing, r.ID,
 	)
 }
 

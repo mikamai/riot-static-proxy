@@ -9,22 +9,22 @@ import (
 
 func TestComposeURLParsesThePath(t *testing.T) {
 	u, _ := composeURL("http://mikamai.com/a", url.Values{})
-	assert.Equal(t, u.Host, "mikamai.com")
-	assert.Equal(t, u.Path, "/a")
+	assert.Equal(t, "mikamai.com", u.Host)
+	assert.Equal(t, "/a", u.Path)
 }
 
 func TestAPIKeyToURLAddsParam(t *testing.T) {
 	APIKey = "foo"
 	u, _ := url.Parse("http://mikamai.com")
 	addAPIKeyToURL(u)
-	assert.Equal(t, u.RequestURI(), "/?api_key=foo")
+	assert.Equal(t, "/?api_key=foo", u.RequestURI())
 }
 
 func TestAPIKeyToURLNotAltersExistingParams(t *testing.T) {
 	APIKey = "foo"
 	u, _ := url.Parse("http://mikamai.com?a=b")
 	addAPIKeyToURL(u)
-	assert.Equal(t, u.RequestURI(), "/?a=b&api_key=foo")
+	assert.Equal(t, "/?a=b&api_key=foo", u.RequestURI())
 }
 
 func TestComposeURLReturnsErrorIfPathIsNotValid(t *testing.T) {
@@ -36,13 +36,13 @@ func TestComposeURLAddsParamsToReturn(t *testing.T) {
 	values := url.Values{}
 	values.Set("foo", "bar")
 	url, _ := composeURL("http://mikamai.com", values)
-	assert.Equal(t, url.Query().Get("foo"), "bar")
+	assert.Equal(t, "bar", url.Query().Get("foo"))
 }
 
 func TestComposeURLAddsAPIKeyToReturn(t *testing.T) {
 	APIKey = "foo"
 	u, _ := composeURL("http://mikamai.com", url.Values{})
-	assert.Equal(t, u.RequestURI(), "/?api_key=foo")
+	assert.Equal(t, "/?api_key=foo", u.RequestURI())
 }
 
 func TestComposeURLMergesAPIKeyWithParams(t *testing.T) {
@@ -50,7 +50,7 @@ func TestComposeURLMergesAPIKeyWithParams(t *testing.T) {
 	values := url.Values{}
 	values.Set("a", "b")
 	u, _ := composeURL("http://mikamai.com", values)
-	assert.Equal(t, u.RequestURI(), "/?a=b&api_key=foo")
+	assert.Equal(t, "/?a=b&api_key=foo", u.RequestURI())
 }
 
 func TestCallAPI(t *testing.T) {
