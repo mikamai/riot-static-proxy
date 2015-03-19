@@ -3,12 +3,12 @@ package main
 import (
 	"net/http"
 	"os"
-	"riot-static-proxy/riot_api"
 	"time"
 
 	"github.com/brandfolder/gin-gorelic"
 	"github.com/gin-gonic/contrib/cache"
 	"github.com/gin-gonic/gin"
+	"github.com/mikamai/riot-static-proxy/riot_api"
 	"github.com/stvp/rollbar"
 )
 
